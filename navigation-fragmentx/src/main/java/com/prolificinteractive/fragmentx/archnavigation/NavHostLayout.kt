@@ -40,7 +40,6 @@ class NavHostLayout @JvmOverloads constructor(
 
   private var graphId: Int = 0
   private var defaultHost: Boolean = false
-  private var menuRes: Int = 0
   private var viewModel: StateViewModel
   private var navigationController: NavController
   private var controller: FragNavController
@@ -51,38 +50,28 @@ class NavHostLayout @JvmOverloads constructor(
     val a = context.obtainStyledAttributes(attrs, R.styleable.NavHostLayout)
     graphId = a.getResourceId(R.styleable.NavHostLayout_navGraph, 0)
     defaultHost = a.getBoolean(R.styleable.NavHostLayout_defaultNavHost, false)
-    menuRes = a.getResourceId(R.styleable.NavHostLayout_menuRes, 0)
     a.recycle()
 
     viewModel = ViewModelProviders.of(context as AppCompatActivity).get(StateViewModel::class.java)
     val savedInstanceState = viewModel.state
 
     controller = FragNavController((this.context as AppCompatActivity).supportFragmentManager, id)
-
     navigationController = NavController(context)
 
-
-    val rootFragments = mutableListOf<Fragment>()
-
     fragmentXNavigator = FragmentXNavigator(controller)
-
     navigationController.navigatorProvider += fragmentXNavigator
 
     // Inflate the nav graph to find the rootFragments
-    val inflator = NavInflater(context, navigationController.navigatorProvider)
-    val navGraph = inflator.inflate(graphId)
-    rootFragments.addAll(navGraph.mapNotNull {
+    val navGraph = NavInflater(context, navigationController.navigatorProvider).inflate(graphId)
+    controller.rootFragments = navGraph.mapNotNull {
       if (it is FragmentXNavigator.Destination && it.isRootFragment) {
         it.createFragment(null)
       } else {
         null
       }
-    })
-
-    controller.rootFragments = rootFragments
+    }
 
     Navigation.setViewNavController(this, navigationController)
-
 
     var navState: Bundle? = null
     if (savedInstanceState != null) {
